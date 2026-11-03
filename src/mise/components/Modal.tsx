@@ -6,6 +6,7 @@
 
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
+import { motion } from 'motion/react';
 
 interface ModalProps {
   isOpen: boolean;
@@ -44,29 +45,37 @@ export const Modal: React.FC<ModalProps> = ({
   }[maxWidth];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-stone-900/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div
-        className={`relative w-full ${maxWidthClasses} bg-white rounded-t-2xl sm:rounded-xl shadow-xl border border-stone-200/80 max-h-[90vh] flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 sm:zoom-in-95 duration-150`}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-stone-950/40 backdrop-blur-md"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 24, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+        onClick={(e) => e.stopPropagation()}
+        className={`relative w-full ${maxWidthClasses} bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl ring-1 ring-stone-950/5 max-h-[90vh] flex flex-col overflow-hidden`}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-stone-100">
+        <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4">
           <div>
-            <h3 className="text-base font-semibold text-stone-900">{title}</h3>
-            {subtitle && <p className="text-xs text-stone-500 mt-0.5">{subtitle}</p>}
+            <h3 className="text-[15px] font-semibold text-stone-950 tracking-tight">{title}</h3>
+            {subtitle && <p className="text-xs text-stone-500 mt-1">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+            className="w-8 h-8 -mr-2 rounded-full flex items-center justify-center text-stone-400 hover:text-stone-900 hover:bg-stone-100 cursor-pointer"
             aria-label="Fechar"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
-
-        {/* Content body */}
+        <div className="h-px bg-stone-100" />
         <div className="p-6 overflow-y-auto">{children}</div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
 
@@ -106,12 +115,12 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} maxWidth="md">
-      <div className="space-y-4">
+      <div className="space-y-5">
         <p className="text-sm text-stone-600 leading-relaxed">{description}</p>
-        
+
         {requireReason && (
           <div>
-            <label className="block text-xs font-medium text-stone-700 mb-1">
+            <label className="block text-xs font-medium text-stone-700 mb-1.5">
               Justificativa (Registrada no AuditLog) *
             </label>
             <textarea
@@ -122,27 +131,25 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
               }}
               rows={2}
               placeholder="Ex: Quebra acidental no pré-preparo / Correção de contagem física..."
-              className="w-full text-sm rounded-lg border border-stone-300 p-2.5 focus:border-stone-900 focus:outline-none focus:ring-1 focus:ring-stone-900"
+              className="w-full text-sm rounded-xl border border-stone-200 bg-stone-50/60 p-3 focus:bg-white focus:border-stone-400"
             />
-            {error && <p className="text-xs text-rose-600 mt-1">{error}</p>}
+            {error && <p className="text-xs text-rose-600 mt-1.5">{error}</p>}
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-100">
+        <div className="flex items-center justify-end gap-2 pt-1">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-lg transition-colors cursor-pointer"
+            className="h-9 px-4 text-sm font-medium text-stone-700 hover:bg-stone-100 rounded-full cursor-pointer"
           >
             Cancelar
           </button>
           <button
             type="button"
             onClick={handleConfirm}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition-colors cursor-pointer shadow-xs ${
-              isDestructive
-                ? 'bg-rose-600 hover:bg-rose-700'
-                : 'bg-stone-900 hover:bg-stone-800'
+            className={`h-9 px-4 text-sm font-medium text-white rounded-full cursor-pointer shadow-sm ${
+              isDestructive ? 'bg-rose-600 hover:bg-rose-700' : 'bg-stone-950 hover:bg-stone-800'
             }`}
           >
             {confirmLabel}
