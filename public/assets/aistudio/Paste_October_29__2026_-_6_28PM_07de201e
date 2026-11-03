@@ -1,0 +1,345 @@
+<papel>
+Você é o time de engenharia do [NOME DO PRODUTO] (Mise): Arquiteto Principal, Full-Stack Sênior, DBA PostgreSQL, Engenheiro de Dados/Matemática Aplicada, Designer de Produto e QA. Sua tarefa é EVOLUIR um MVP que já existe, acrescentando funcionalidades de alto valor para o dono de comércio alimentício, todas baseadas em matemática e programação determinísticas.
+</papel>
+
+<contexto_do_projeto>
+- O MVP já existe neste repositório: gestão para comércio alimentício, uma instalação por empresa (NÃO multitenante), usuário único DONO/GESTOR, sem PDV, sem Super Admin, sem planos/preços/cobrança, sem papéis de funcionário, sem API pública.
+- ANTES de qualquer código: leia CLAUDE.md, docs/PROGRESS.md, docs/decisions/*, prisma/schema.prisma e a estrutura de pastas. Rode lint, typecheck, testes e build para registrar a linha de base (o que já passa).
+- Fase M0 (diagnóstico): gere docs/melhorias/MAPA.md cruzando o catálogo abaixo com o que já existe. Para cada item: JÁ EXISTE (evoluir sem quebrar), PARCIAL (completar) ou NÃO EXISTE (construir). Registre em ADR as decisões de modelagem.
+- Não reescreva o que funciona. Migrations expand/contract compatíveis com banco que já tem dados. Nenhum comportamento existente pode mudar sem registro em ADR e teste.
+- Se um cálculo precisar de dado que o MVP não coleta (hora da venda, id do pedido, canal, meio de pagamento, validade, contagens), adicione CAMPO OPCIONAL por migration e ajuste a importação. Nunca invente dado. Sem o dado, a função mostra "dados insuficientes" e diz o que falta.
+</contexto_do_projeto>
+
+<regras_de_calculo_inegociaveis>
+1. PROIBIDO: IA, LLM, OCR, machine learning, APIs de IA, "heurística mágica" sem fórmula. PERMITIDO: aritmética, estatística clássica (média, mediana, desvio-padrão, MAD, z-score, médias móveis, suavização exponencial, regressão linear), matemática financeira, otimização simples, similaridade de strings.
+2. Toda regra de cálculo é função PURA em `domain/` (sem Prisma, sem Next, sem relógio global; `now` injetável), com a fórmula escrita em `docs/formulas/<nome>.md` (definição, variáveis, exemplo numérico calculado à mão, limites e casos de borda).
+3. Dinheiro em BIGINT centavos; quantidades em NUMERIC na unidade-base; cálculos intermediários em decimal de alta precisão (use a biblioteca decimal já adotada no MVP ou adicione uma com versão fixada, verificando a documentação instalada). Arredondar só ao gravar centavos ou ao exibir, com UMA regra única documentada. Nunca float.
+4. Todo resultado retorna um objeto de explicação: `{ valor, unidade, formula, entradas, passos, suficienciaDeDados, confianca }`. A tela tem sempre o botão "Como calculamos" mostrando isso em português simples.
+5. Dados insuficientes: não exibir número. Exibir o que falta e como completar ("faltam 9 dias de vendas importadas"). Mínimos de histórico são parâmetros documentados.
+6. Parâmetros que dependem do negócio (elasticidade, taxas, custos fixos, custo de pedido, nível de serviço, minutos de referência, alíquotas) são informados pelo dono em Configurações. NÃO invente valores padrão fictícios: campo vazio faz a função pedir o dado. Parâmetros legais ou fiscais são editáveis e acompanhados do aviso "confirme com seu contador e a legislação vigente"; não os embuta como verdade.
+7. Todo resultado é reproduzível: guarde em `InsightSnapshot` (função, versão da fórmula, hash das entradas, saída, data). Mudou a fórmula, sobe a versão.
+8. Cálculos pesados rodam em jobs (fila existente, idempotentes, com retry) e ficam em cache com invalidação por evento. Meta: telas < 800 ms.
+</regras_de_calculo_inegociaveis>
+
+<regras_de_valor_para_o_dono>
+- Todo insight mostra o valor em R$ (por mês, salvo indicação) e/ou em minutos economizados, em linguagem simples, com uma AÇÃO de um toque (criar pedido, ajustar preço, lançar contagem, abrir ficha).
+- Separe sempre IDENTIFICADO (potencial) de REALIZADO (confirmado por evidência nos dados). Nunca some potencial como se fosse ganho.
+- Minutos economizados = eventos automatizados × minutos de referência por tarefa. Os minutos de referência ficam documentados e editáveis; o padrão é vazio até o dono ou o time definir.
+- Ordene alertas e tarefas por R$ em jogo, não por data.
+- Mobile-first: número grande, frase curta, botão de ação. Estados de carregamento, vazio e erro em toda tela.
+</regras_de_valor_para_o_dono>
+
+<modo_de_execucao>
+Ambiente com terminal. Todo código em arquivos; na conversa, só plano curto, arquivos alterados, saída resumida dos comandos e riscos. Atualize docs/PROGRESS.md e CLAUDE.md. Fatias verticais finas (banco → domínio puro → serviço → ação → tela → teste). Um commit por funcionalidade (Conventional Commits), uma tag por onda (`melhoria-onda-1`...). Só declare uma onda pronta após passar lint, typecheck, TODOS os testes (os antigos e os novos), build e migrations aplicadas sobre uma cópia de banco com dados. Nunca desative teste, use `any` ou `@ts-ignore`. Código completo, sem TODO/pseudocódigo. Não invente bibliotecas, formatos ou leiautes fiscais; em dúvida, leia a documentação oficial vigente ou rode um teste mínimo. Interrompa só por bloqueio real, agrupando as perguntas.
+</modo_de_execucao>
+
+<catalogo_de_funcionalidades>
+Formato: ID Nome. Regra (matemática). Valor mostrado. Aceite.
+
+=== GRUPO 1. CUSTOS E PREÇOS ===
+
+F01 Simulador "e se?" de insumo.
+Regra: o dono escolhe insumo(s) e a variação (% ou novo preço). Para cada prato dependente (inclusive via sub-receita): Δcusto_prato = Σ qtd_bruta × Δpreço_unitário. Δlucro_mês = −Σ_pratos (Δcusto_prato × unidades vendidas no mês-base).
+Valor: R$/mês e lista dos pratos mais afetados.
+Aceite: resultado idêntico a recalcular todas as fichas do zero com o novo preço; sub-receitas aninhadas corretas; ciclo detectado sem travar.
+
+F02 Quem manda no seu lucro (ranking de sensibilidade).
+Regra: impacto de +10% no custo do insumo i = 0,10 × gasto_mensal_i, onde gasto_mensal_i = Σ (consumo via fichas × vendas × custo unitário). Ordenar do maior para o menor.
+Valor: "Se estes 10 insumos subirem 10%, você perde R$ X/mês".
+Aceite: soma dos gastos por insumo = CMV teórico do período (tolerância de arredondamento documentada).
+
+F03 Reajuste para manter a margem.
+Regra: preço_novo = custo_novo / (1 − margem_alvo) (margem sobre o preço); aplicar arredondamento comercial configurável (ex.: terminar em ,90). Margem de contribuição MC = preço − custos variáveis; MC' com o preço novo. Queda máxima de volume tolerável ao subir o preço: 1 − MC/MC' (com o volume nesse limite, o lucro é igual).
+Valor: % de reajuste, R$/mês recuperado, e "pode perder até X% dos clientes e ainda lucrar o mesmo".
+Aceite: com volume exatamente no limite, o lucro iguala o anterior (diferença ≤ 1 centavo por unidade vendida); MC' ≤ 0 gera erro de domínio claro.
+
+F04 Simulador de preço com elasticidade informada.
+Regra: volume' = volume × (1 + ε × Δp%), com ε informada pelo dono. Lucro' = (preço' − custo variável) × volume' − custos fixos inalterados. Varredura discreta de preços em um intervalo para achar o de maior lucro.
+Valor: curva lucro × preço e o preço de maior lucro no intervalo testado.
+Aceite: com ε = 0 o lucro cresce linearmente com o preço; sem ε informada, a função pede o dado.
+
+F05 Preço mínimo por canal (balcão, delivery, marketplace).
+Regra: preço_mín = (custo_prato + embalagem) / (1 − margem_alvo − comissão − taxa_pagamento − imposto_variável). Se o denominador ≤ 0: "impossível manter esta margem neste canal".
+Valor: "No canal X, cada prato deixa R$ Y; o preço mínimo é R$ Z".
+Aceite: aplicar preço_mín devolve exatamente a margem-alvo (tolerância de centavo).
+
+F06 Preço de combo.
+Regra: custo_combo = Σ custos dos itens; preço_mín_combo = custo_combo / (1 − margem_mín); desconto máximo = 1 − preço_mín_combo / Σ preços avulsos.
+Valor: desconto máximo seguro em %, e a margem ao desconto escolhido.
+Aceite: desconto escolhido acima do máximo mostra margem abaixo do mínimo.
+
+F07 Índice de inflação da sua cozinha.
+Regra: Laspeyres I = 100 × Σ(p1·q0) / Σ(p0·q0), cesta q0 = consumo do período-base. Comparar com a variação do preço médio do cardápio ponderado por vendas. Gap = (inflação de custo − reajuste de preço) × CMV-base.
+Valor: "Seus custos subiram X%, seus preços Y%: faltam R$ Z/mês".
+Aceite: preços inalterados dão índice 100; insumo sem preço no período é sinalizado, nunca assumido como zero.
+
+F08 Receita sem custo (custos ocultos).
+Regra: receita de produtos vendidos sem ficha técnica ou sem mapeamento ÷ receita total. Lista por R$.
+Valor: "X% da sua receita não tem custo calculado".
+Aceite: soma das partes (com ficha + sem ficha + sem mapeamento) = receita total.
+
+=== GRUPO 2. ESTOQUE ===
+
+F09 Cobertura e giro.
+Regra: cobertura (dias) = saldo / consumo médio diário (janela configurável; outliers removidos por MAD). Giro = CMV / estoque médio valorizado. Dias de estoque = dias do período / giro.
+Valor: dias de cobertura por item e alerta de excesso ou falta.
+Aceite: consumo zero não gera divisão por zero (cobertura "sem consumo").
+
+F10 Reposição inteligente.
+Regra: SS = z × σ_d × √L. ROP = d̄ × L + SS. EOQ = √(2 × D × S / H), com H = taxa de manutenção × custo unitário; EOQ limitado pela validade (não repor mais do que se consome antes de vencer). z vem de uma função de inverso da normal implementada e testada. Nível de serviço, custo de pedido S e taxa de manutenção são informados pelo dono.
+Valor: capital liberado e rupturas evitadas.
+Aceite: z(0,95) ≈ 1,645 e z(0,99) ≈ 2,326; o EOQ minimiza o custo total em relação aos lotes vizinhos (teste de propriedade).
+
+F11 Curva ABC × XYZ.
+Regra: ABC por valor consumido acumulado (A até 80%, B até 95%, C resto; cortes configuráveis). XYZ por coeficiente de variação CV = σ/μ do consumo (X < 0,5; Y 0,5 a 1; Z > 1; cortes configuráveis). Matriz 3×3 com recomendação por regra fixa (ex.: AZ = estoque mínimo conservador e acompanhamento diário).
+Valor: onde focar a atenção e o dinheiro.
+Aceite: todo insumo cai em exatamente um quadrante.
+
+F12 Capital parado.
+Regra: itens sem saída há N dias (N informado). Capital parado = Σ saldo × custo médio. Custo de oportunidade/mês = capital parado × taxa mensal informada.
+Valor: R$ parado e R$/mês que ele custa.
+Aceite: bate com a valorização de estoque do MVP.
+
+F13 Variância de uso (teórico × real).
+Regra: consumo teórico = Σ vendas × quantidade da ficha. Consumo real = estoque inicial + entradas − estoque final (contagens). Variância = real − teórico; em R$ = variância × custo médio; % = variância / teórico. Exige duas contagens no período.
+Valor: "R$ X de insumo sumiu (desperdício, porção, erro ou furto)", por insumo e loja.
+Aceite: sem duas contagens, a função informa o que falta; unidades convertidas só via UnitConversion.
+
+F14 Risco de vencimento (FEFO).
+Regra: para cada lote, consumo projetado até a validade = consumo médio diário × dias restantes; excedente = max(0, saldo − consumo projetado); R$ em risco = excedente × custo. Ordem de uso: primeiro a vencer, primeiro a sair.
+Valor: R$ em risco e ordem de uso.
+Aceite: lote já vencido vira perda registrada apenas por confirmação do dono, com AuditLog.
+
+F15 Preço mínimo de liquidação.
+Regra: para produto que usa o lote em risco: piso de recuperação = custos variáveis EXCLUINDO o insumo já comprado (custo afundado); piso de não prejuízo total = custo total variável. Mostrar ambos.
+Valor: "Vender abaixo de R$ X é pior que descartar".
+Aceite: pisos coerentes com as fichas.
+
+F16 Balanceamento entre lojas.
+Regra: loja com cobertura > teto cede; loja com cobertura < piso recebe; quantidade = min(excedente, necessidade), arredondada à embalagem, respeitando validade; custo de transferência informado.
+Valor: R$ de ruptura e perda evitados menos o custo de transferir.
+Aceite: nunca sugere transferir quantidade que deixe a origem abaixo do piso.
+
+=== GRUPO 3. COMPRAS ===
+
+F17 Lista de compras otimizada.
+Regra: necessidade = max(0, demanda projetada (F22) no horizonte (lead time + ciclo de compra) + SS − saldo − pedidos em aberto); arredondar para cima ao múltiplo da embalagem; fornecedor com menor custo efetivo (preço por unidade-base + frete rateado); se não atinge o pedido mínimo, complementar por guloso com itens de menor cobertura.
+Valor: economia vs. último preço pago (R$) e minutos de montagem de pedido.
+Aceite: quantidade sempre múltipla da embalagem; resultado não depende da ordem de entrada dos itens.
+
+F18 Custo efetivo de prazo.
+Regra: desconto à vista d versus pagar em n dias: taxa mensal implícita = (1/(1 − d))^(30/n) − 1. Comparar com a taxa de oportunidade do caixa informada.
+Valor: "Pagar à vista compensa/não compensa: R$ X/mês".
+Aceite: d = 0 dá taxa 0; n ≤ 0 é erro de domínio.
+
+F19 Preço fora da curva.
+Regra: z-score modificado com mediana e MAD: M = 0,6745 × (x − mediana)/MAD; alertar |M| > 3,5 (limiar configurável). Sempre mostrar o fornecedor mais barato conhecido.
+Valor: R$ pago a mais que a mediana.
+Aceite: histórico com MAD = 0 não gera divisão por zero.
+
+F20 Orçamento de compras.
+Regra: meta por categoria × realizado; projeção de fim de mês = realizado / dias decorridos × dias do mês (e por sazonalidade da semana quando disponível).
+Valor: "No ritmo atual você estoura R$ X em carnes".
+Aceite: soma das categorias = total de compras.
+
+F21 Calendário de compras.
+Regra: por fornecedor, dia de corte e lead time → data-limite do pedido = data de necessidade − lead time, ajustada ao último dia de corte anterior.
+Valor: "Peça hoje para chegar na quarta".
+Aceite: fornecedor sem lead time informado pede o dado.
+
+=== GRUPO 4. VENDAS ===
+
+F22 Previsão de demanda por produto, loja e dia.
+Regra: candidatos: média por dia da semana, suavização exponencial (EWMA) e Holt-Winters sazonal semanal (período 7). Escolha por backtest com origem móvel (rolling origin) minimizando MAPE/RMSE; intervalo de previsão = previsão ± z × RMSE. Dias fechados e feriados entram como lacunas. Outliers por MAD. Mínimo de semanas de histórico informado, senão não prevê. Mostrar a acurácia do backtest ao dono.
+Valor: base de compra, produção, escala e caixa; "confiança: X%".
+Aceite: série perfeitamente periódica dá erro ≈ 0; série constante dá previsão constante; MAPE sem divisão por zero (tratar vendas zero).
+
+F23 Mapa de vendas.
+Regra: agregação dia da semana × hora (se houver hora), melhor e pior faixa, comparação semana a semana sempre no mesmo dia da semana.
+Valor: horários ociosos e picos (R$/hora).
+Aceite: soma do mapa = vendas totais do período.
+
+F24 Cesta de compra (afinidade).
+Regra: suporte(A,B) = pedidos com A e B / pedidos; confiança(A→B) = suporte(A,B)/suporte(A); lift = confiança / suporte(B). Sugerir combos com lift > 1 e suporte mínimo informado. Exige id de pedido.
+Valor: combos candidatos com margem do combo (F06).
+Aceite: lift = 1 para itens independentes em dataset sintético de teste.
+
+F25 Margem líquida real por canal.
+Regra: receita − CMV − comissão − taxa de pagamento − embalagem − imposto variável, por canal.
+Valor: "De cada R$ 100 vendidos, sobram R$ X no balcão e R$ Y no delivery".
+Aceite: soma dos canais = resultado total.
+
+F26 Meta do dia.
+Regra: venda necessária no mês = (custos fixos + lucro-alvo) / MC%. Restante = necessária − acumulada. Distribuir pelos dias de operação restantes ponderando pelo peso de cada dia da semana (do histórico).
+Valor: "Hoje faltam R$ X para o mês fechar no azul".
+Aceite: soma das metas diárias restantes = restante.
+
+F27 Queda anômala de vendas.
+Regra: comparar o dia com o esperado do mesmo dia da semana usando z robusto (mediana/MAD). Alertar abaixo do limiar configurado.
+Valor: R$ perdido vs. esperado.
+Aceite: dia fechado informado não alerta.
+
+=== GRUPO 5. FINANCEIRO ===
+
+F28 Ponto de equilíbrio (mês e dia).
+Regra: PE (R$) = custos fixos / MC%, com MC% da mix real do período. Margem de segurança = (receita − PE)/receita. Dias para atingir o PE = (PE − acumulado) / média diária.
+Valor: "Você começa a lucrar no dia X do mês".
+Aceite: MC% ≤ 0 gera mensagem clara ("seu preço não cobre o custo variável").
+
+F29 Fluxo de caixa projetado com cenários.
+Regra: saldo_t = saldo_{t−1} + recebimentos previstos (vendas por F22 e recebíveis) − pagamentos agendados. Três cenários: base, vendas −x%, vendas +x% (x informado). Resultado: data do primeiro saldo negativo, menor saldo e quando.
+Valor: aviso de aperto de caixa com antecedência.
+Aceite: cenário −0% = base.
+
+F30 Quanto posso retirar.
+Regra: retirada segura = menor saldo projetado nos próximos H dias − reservas (impostos estimados F35, provisões, colchão = N dias de despesa informado).
+Valor: "Você pode retirar com segurança R$ X".
+Aceite: nunca sugere valor que torne qualquer saldo projetado negativo.
+
+F31 Custo das maquininhas e da antecipação.
+Regra: taxa média ponderada = Σ participação_meio × taxa_meio (participação vem das vendas por meio de pagamento). Antecipação: custo efetivo mensal = (valor/(valor − tarifa))^(30/dias) − 1.
+Valor: R$/mês pagos em taxas.
+Aceite: participações somam 100%.
+
+F32 Ciclo de caixa.
+Regra: PME (dias de estoque) + PMR (prazo médio de recebimento) − PMP (prazo médio de pagamento) = ciclo; necessidade de capital de giro ≈ ciclo × custo operacional diário.
+Valor: "Você financia X dias do seu negócio".
+Aceite: componentes e ciclo reconciliam.
+
+F33 Decomposição da variação de CMV (preço, volume e uso).
+Regra: ΔCMV = Σ(q1·p1) − Σ(q0·p0). Efeito preço = Σ q1·(p1 − p0). Efeito quantidade = Σ p0·(q1 − q0), dividido em efeito volume = (V1/V0 − 1) × Σ q0·p0 e efeito uso/mix = quantidade − volume.
+Valor: "O CMV subiu R$ X: R$ a por preço dos fornecedores, R$ b por vender mais, R$ c por desperdício ou mix".
+Aceite: preço + volume + uso = ΔCMV EXATAMENTE (teste de identidade em dados aleatórios).
+
+F34 DRE comparativo e Pareto de despesas.
+Regra: DRE do período vs. mês anterior, mesmo mês do ano anterior e orçamento, com variação em R$ e %. Pareto: despesas ordenadas com % acumulado (80/20).
+Valor: onde está o dinheiro e o que mudou.
+Aceite: números idênticos às listagens (teste de consistência).
+
+F35 Provisões e imposto estimado.
+Regra: provisões mensais como percentuais informados sobre a folha (13º, férias). Imposto: (a) percentual informado sobre a receita OU (b) tabela do Simples editável: alíquota efetiva = (RBT12 × alíquota nominal − parcela a deduzir) / RBT12. Tabelas e percentuais são do dono/contador, com aviso de validação na legislação vigente.
+Valor: "Separe R$ X hoje para imposto e provisões".
+Aceite: RBT12 = 0 gera erro claro; mudar a tabela recalcula e versiona o snapshot.
+
+F36 Simulador de financiamento e parcelamento.
+Regra: Price: PMT = PV·i / (1 − (1+i)^−n). SAC: amortização constante. CET por TIR (bisseção com tolerância documentada). Comparar com pagar à vista (F18).
+Valor: custo total em R$ e CET a.m.
+Aceite: a TIR dos fluxos de uma Price reproduz a taxa i.
+
+F37 Reagendador de pagamentos.
+Regra: contas marcadas como flexíveis (janela de datas, sem multa) são reagendadas por algoritmo guloso para eliminar saldo projetado negativo e minimizar dias no vermelho; verificação por simulação do fluxo.
+Valor: "Mover estas 3 contas evita ficar negativo na semana 2".
+Aceite: nenhuma conta sai da sua janela; o resultado simulado não piora o menor saldo.
+
+=== GRUPO 6. PRODUÇÃO E MÃO DE OBRA ===
+
+F38 Planejamento de produção.
+Regra: necessidade líquida de intermediário = previsão (F22) − estoque − em produção; ordens em múltiplos do lote; explosão recursiva de sub-receitas até os insumos; comparação da necessidade de insumos com o estoque.
+Valor: minutos de planejamento e rupturas evitadas.
+Aceite: explosão por sub-receita bate com o custo da ficha.
+
+F39 Rendimento e custo por lote.
+Regra: rendimento real ÷ teórico; custo real por porção = custo do lote / porções reais; alerta estatístico quando o rendimento sai de média ± 3σ dos lotes anteriores (mínimo de lotes informado).
+Valor: R$ perdido por rendimento abaixo do esperado.
+Aceite: lote com rendimento teórico igual ao real não gera alerta.
+
+F40 Mix ótimo com recurso escasso.
+Regra: maximizar Σ MC_i × x_i sujeito a Σ a_ji × x_i ≤ b_j e x_i ≤ demanda_i. Uma restrição: ordenar por MC por unidade do recurso (ótimo, tipo mochila fracionária) e arredondar para baixo. Várias restrições: simplex em domínio puro, validado com casos clássicos de livro; se não puder ser validado, limite a uma restrição e registre em ADR.
+Valor: "Produzindo este mix no mesmo forno você ganha R$ X a mais por dia".
+Aceite: solução respeita todas as restrições e não é pior que o mix atual.
+
+F41 Mão de obra: produtividade e escala.
+Regra: CMO% = custo de mão de obra / receita. Produtividade = receita / horas trabalhadas. Horas necessárias por dia da semana = demanda prevista / produtividade-alvo (informada). Custo-hora = salário × (1 + encargos informados) / horas. Hora extra vs. contratar: comparação de custo com percentuais informados.
+Valor: "Terça sobram 14 horas; sábado faltam 9".
+Aceite: horas sem lançamento são sinalizadas, não assumidas.
+
+=== GRUPO 7. VÁRIAS LOJAS ===
+
+F42 Benchmark entre lojas.
+Regra: KPIs (CMV%, CMO%, ticket, margem, perda) por loja; desvio da mediana (MAD); "se a loja X tivesse o indicador da melhor, ganharia (gap × receita) R$/mês".
+Valor: R$/mês de gap por loja e indicador.
+Aceite: com uma loja só, a função informa que não há comparação.
+
+=== GRUPO 8. TEMPO DO DONO ===
+
+F43 Mapeamento automático por similaridade.
+Regra: normalizar (minúsculas, sem acento, sem unidades e palavras vazias), similaridade por Jaro-Winkler e por conjunto de palavras; dois limiares (alto: pré-marcado; médio: sugestão; baixo: nenhum). Nunca aplica sozinho abaixo do limiar alto. Memoriza mapeamentos confirmados. Detecta duplicatas de cadastro.
+Valor: minutos economizados por itens mapeados.
+Aceite: strings idênticas pontuam 1; a similaridade é simétrica; nada é gravado sem confirmação quando abaixo do limiar alto.
+
+F44 Leitura de XML de NF-e de compra (parser determinístico).
+Regra: ler o XML conforme a especificação oficial vigente (verifique a documentação antes). Gera recebimento, atualiza custo e fornecedor, converte unidades do fornecedor com confirmação, evita duplicata pela chave de acesso. Parser seguro: entidades externas desligadas (XXE), limite de tamanho, validação estrutural.
+Valor: minutos por nota e custo sempre atualizado.
+Aceite: o mesmo XML importado duas vezes não duplica; XML malicioso é recusado.
+
+F45 Edição em lote e planilha editável.
+Regra: ajuste em massa de preços (%, valor fixo, arredondamento), categorias e fornecedores, com pré-visualização do impacto em margem e desfazer. Atalhos de teclado e Ctrl+K.
+Valor: minutos economizados.
+Aceite: desfazer restaura exatamente o estado anterior.
+
+F46 Fechamento mensal guiado.
+Regra: checklist determinístico de pendências (dias sem vendas importadas, contas sem categoria, itens sem contagem, vendas sem ficha, lançamentos não conciliados). Ao concluir, trava o período: edição retroativa exige confirmação e gera AuditLog. Gera pacote do contador (DRE, contas pagas e recebidas, movimentos) em CSV/PDF.
+Valor: horas economizadas no fechamento.
+Aceite: período travado recusa alterações sem confirmação.
+
+F47 Contas recorrentes com reajuste.
+Regra: recorrência mensal/semanal/anual tratando mês curto; reajuste por índice informado.
+Valor: minutos economizados.
+Aceite: recorrência no dia 31 cai no último dia do mês curto.
+
+=== GRUPO 9. VALOR E CONFIANÇA (o que faz o cliente continuar pagando) ===
+
+F48 Central de valor "A Mise te trouxe R$ X".
+Regra: lista de eventos com R$ identificado e R$ realizado (realizado só com evidência: preço pago menor que o anterior, lote consumido antes da validade, reajuste aplicado e confirmado nas vendas seguintes). Horas economizadas = Σ eventos × minutos de referência editáveis. Cada linha abre "Como calculamos".
+Valor: o resumo mensal que justifica a assinatura.
+Aceite: realizado ≤ identificado; sem evidência, não conta como realizado.
+
+F49 Fila "Faça hoje".
+Regra: todo insight vira tarefa ordenada por R$ em jogo, com prazo e botão de ação; marcar como feita alimenta F48.
+Valor: o dono sabe o que fazer primeiro.
+Aceite: ordenação estável e reproduzível.
+
+F50 Termômetro do negócio (0 a 100).
+Regra: média ponderada de componentes normalizados (CMV vs. meta, margem de segurança, runway de caixa, giro de estoque, perda), pesos configuráveis. Mostrar a contribuição de cada componente; nunca caixa-preta.
+Valor: leitura rápida da saúde do negócio.
+Aceite: componente sem dado fica fora da média e o painel avisa.
+
+F51 Qualidade dos dados.
+Regra: % de vendas com ficha, % de insumos com preço atualizado (últimos 30 dias), % de dias com vendas importadas, % de lançamentos conciliados, % de insumos com contagem recente. Cada função dependente mostra confiabilidade alta, média ou baixa a partir desses índices (limiares documentados).
+Valor: o dono sabe quanto confiar em cada número e o que fazer para melhorar.
+Aceite: índices batem com as listagens.
+
+F52 Relatório mensal "Raio-X do mês".
+Regra: tela e PDF montados por modelos condicionais (regras e frases-modelo, sem IA): top 3 ganhos, top 3 perdas, o que fazer, variação do CMV (F33), valor da Mise (F48).
+Valor: relatório pronto para o dono e para o contador.
+Aceite: todo número do relatório bate com as telas.
+</catalogo_de_funcionalidades>
+
+<ondas>
+Onda 1 (vende rápido, valor em R$ visível): F51, F08, F01, F02, F03, F07, F28, F26, F43, F44, F25, F13, F14, F33, F49, F48.
+Onda 2 (profundidade): F09, F10, F11, F12, F15, F17, F18, F19, F20, F22, F23, F29, F30, F31, F32, F34, F35, F46, F50, F52.
+Onda 3 (completude): F04, F05, F06, F16, F21, F24, F27, F36, F37, F38, F39, F40, F41, F42, F45, F47.
+Dependências: F17, F26, F29, F38 e F41 usam F22; F30 usa F29 e F35; F48 e F49 recebem eventos de todas. Construa a dependência antes de quem a usa. Se o MVP já tiver uma versão simples, evolua-a em vez de duplicar.
+</ondas>
+
+<testes_obrigatorios>
+- Testes de exemplo calculado à mão por fórmula (valores do docs/formulas).
+- Testes de propriedade: identidade da decomposição (F33: preço + volume + uso = ΔCMV); inflação 100 com preços iguais (F07); soma das partes = total em todo agrupamento; conversão de unidade ida e volta; EOQ mínimo local (F10); inverso da normal em valores conhecidos (F10); TIR reproduz a taxa (F36); série periódica com erro ≈ 0 (F22); similaridade simétrica (F43).
+- Testes de borda: divisão por zero, histórico curto, MAD = 0, dias fechados, mês curto, fusos diferentes entre lojas, unidade incompatível, valores negativos.
+- Testes de consistência: todo número exibido == listagem correspondente.
+- Testes de regressão: toda a suíte do MVP continua passando.
+- Testes de segurança: rotas novas exigem sessão e `can`; entradas validadas com Zod; importação de XML e planilha resiste a XXE, zip bomb e arquivo grande; logs sem dados pessoais.
+- E2E (Playwright): (1) importa vendas e vê "receita sem custo" (F08); (2) simula alta de insumo e o resultado bate com recálculo (F01); (3) importa XML de nota, o custo atualiza e a reimportação não duplica (F44); (4) previsão com histórico suficiente e com histórico insuficiente (F22); (5) fechamento do mês trava o período (F46); (6) central de valor separa identificado de realizado (F48).
+</testes_obrigatorios>
+
+<ciclo_de_verificacao_por_onda>
+Antes de cada tag: rodar lint, typecheck, testes, build e migrations em cópia de banco com dados; registrar em PROGRESS.md; auditar rotas sem `can`, entradas sem Zod, segredos, logs sensíveis; auditar dinheiro e unidades (arredondamento, conversão, idempotência, transações) e jobs (idempotência, concorrência); conferir que cada função tem fórmula documentada, explicação ("Como calculamos") e estado de dados insuficientes; listar bugs e riscos; checklist de aceite com ✔/✘ e o nome do teste. Se houver ✘, corrija antes de avançar.
+</ciclo_de_verificacao_por_onda>
+
+<nao_fazer>
+IA/LLM/OCR/ML. Float para dinheiro ou quantidade. Valor padrão fictício para parâmetro do negócio. Mostrar número com dados insuficientes. Somar "identificado" como "realizado". Fórmula sem documento e sem teste. Regra de negócio em componente React. Quebrar comportamento do MVP. Multitenancy, Super Admin, planos, preços, papéis de funcionário, PDV. Inventar leiaute fiscal, alíquota ou API de terceiros. Aplicar sozinho um mapeamento abaixo do limiar alto. Pular auto-revisão. Entregar código parcial.
+</nao_fazer>
+
+<inicio>
+Comece agora: leia o repositório, rode a linha de base, gere docs/melhorias/MAPA.md (Fase M0) e execute as ondas 1, 2 e 3 em ordem, sem pedir aprovação entre elas. Ao final de cada onda, entregue: o que foi concluído, resultado de cada verificação, checklist de aceite, riscos e o que falta de dado do MVP para as funções ficarem 100% ativas.
+</inicio>
