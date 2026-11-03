@@ -7,7 +7,7 @@
  */
 
 import React, { useState } from 'react';
-import { ChefHat, ShieldCheck, Store, User, ArrowRight } from 'lucide-react';
+import { ShieldCheck, Store, User, ArrowRight } from 'lucide-react';
 import { bootstrapOwner, MiseDatabaseState } from '../lib/storage';
 
 interface BootstrapScreenProps {
@@ -54,23 +54,36 @@ export const BootstrapScreen: React.FC<BootstrapScreenProps> = ({ onBootstrapSuc
   };
 
   return (
-    <div className="min-h-screen bg-stone-100 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+    <div className="mise-access-screen min-h-screen bg-stone-50 lg:grid lg:grid-cols-[0.9fr_1.1fr]">
+      <aside className="mise-access-aside relative hidden flex-col justify-between overflow-hidden bg-stone-950 px-12 py-10 text-white lg:flex xl:px-16 xl:py-14">
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="mise-brand-mark h-11 w-11"><span className="font-display text-3xl leading-none">m</span></div>
+          <span className="text-2xl font-semibold tracking-tight">mise</span>
+        </div>
+        <div className="relative z-10 max-w-xl">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-ember">PRIMEIRO PASSO</p>
+          <h1 className="mt-5 font-display text-5xl font-normal leading-[1.02] tracking-tight xl:text-6xl">Seu negócio.<br />Sob controle.</h1>
+          <p className="mt-6 max-w-md text-sm leading-7 text-white/65">Configure a empresa, a primeira unidade e o perfil do responsável. A partir daí, a operação começa com uma base limpa e organizada.</p>
+        </div>
+        <p className="relative z-10 text-xs text-white/45">Uma operação bem preparada começa com dados confiáveis.</p>
+      </aside>
+      <main className="flex min-h-screen flex-col items-center justify-center px-4 py-10 sm:px-8">
+      <div className="w-full max-w-md">
         <div className="flex justify-center">
-          <div className="w-12 h-12 rounded-xl bg-stone-900 text-amber-400 flex items-center justify-center shadow-md">
-            <ChefHat className="w-7 h-7 stroke-[2]" />
+          <div className="mise-brand-mark h-12 w-12">
+            <span className="font-display text-[34px] leading-none">m</span>
           </div>
         </div>
         <h2 className="mt-4 text-center text-2xl font-bold tracking-tight text-stone-900">
-          Mise — Gestão Alimentícia
+          Mise
         </h2>
         <p className="mt-1 text-center text-xs text-stone-600">
           Instalação Própria · Papel Único Dono · Controle Real de CMV
         </p>
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 shadow-sm sm:rounded-2xl border border-stone-200/80 sm:px-10">
+      <div className="mt-7 w-full max-w-md">
+        <div className="rounded-3xl border border-stone-200/80 bg-white px-6 py-8 shadow-xl shadow-stone-950/5 sm:px-10">
           <div className="mb-6 pb-4 border-b border-stone-100">
             <div className="flex items-center gap-2 text-stone-900 font-semibold text-sm">
               <ShieldCheck className="w-4 h-4 text-emerald-600" />
@@ -161,6 +174,7 @@ export const BootstrapScreen: React.FC<BootstrapScreenProps> = ({ onBootstrapSuc
           </form>
         </div>
       </div>
+      </main>
     </div>
   );
 };

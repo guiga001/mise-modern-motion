@@ -260,6 +260,56 @@
   --paper: oklch(0.99 0.002 265);
 }
 
+/* Mise Refresh: papel quente, tinta verde-pinho e cítrico de assinatura. */
+:root {
+  --radius: 0.95rem;
+  --background: oklch(0.978 0.009 135);
+  --foreground: oklch(0.16 0.035 155);
+  --card: oklch(0.997 0.006 105);
+  --card-foreground: oklch(0.16 0.035 155);
+  --popover: oklch(0.997 0.006 105);
+  --popover-foreground: oklch(0.16 0.035 155);
+  --primary: oklch(0.19 0.04 155);
+  --primary-foreground: oklch(0.99 0.005 105);
+  --secondary: oklch(0.94 0.018 135);
+  --secondary-foreground: oklch(0.2 0.04 155);
+  --muted: oklch(0.948 0.014 135);
+  --muted-foreground: oklch(0.48 0.035 155);
+  --accent: oklch(0.82 0.16 132);
+  --accent-foreground: oklch(0.16 0.035 155);
+  --border: oklch(0.90 0.018 140);
+  --input: oklch(0.88 0.02 140);
+  --ring: oklch(0.72 0.15 132);
+  --ember: oklch(0.82 0.16 132);
+  --ember-soft: oklch(0.95 0.045 132);
+  --ink: oklch(0.14 0.025 155);
+  --paper: oklch(0.997 0.006 105);
+  --color-white: var(--paper);
+  --color-black: var(--ink);
+  --mise-50: oklch(0.985 0.008 135);
+  --mise-100: oklch(0.965 0.012 135);
+  --mise-200: oklch(0.92 0.018 140);
+  --mise-300: oklch(0.86 0.025 145);
+  --mise-400: oklch(0.71 0.03 150);
+  --mise-500: oklch(0.55 0.035 155);
+  --mise-600: oklch(0.43 0.035 155);
+  --mise-700: oklch(0.34 0.035 155);
+  --mise-800: oklch(0.25 0.035 155);
+  --mise-900: oklch(0.18 0.03 155);
+  --mise-950: oklch(0.13 0.025 155);
+  --color-stone-50: var(--mise-50); --color-neutral-50: var(--mise-50); --color-zinc-50: var(--mise-50); --color-gray-50: var(--mise-50); --color-slate-50: var(--mise-50);
+  --color-stone-100: var(--mise-100); --color-neutral-100: var(--mise-100); --color-zinc-100: var(--mise-100); --color-gray-100: var(--mise-100); --color-slate-100: var(--mise-100);
+  --color-stone-200: var(--mise-200); --color-neutral-200: var(--mise-200); --color-zinc-200: var(--mise-200); --color-gray-200: var(--mise-200); --color-slate-200: var(--mise-200);
+  --color-stone-300: var(--mise-300); --color-neutral-300: var(--mise-300); --color-zinc-300: var(--mise-300); --color-gray-300: var(--mise-300); --color-slate-300: var(--mise-300);
+  --color-stone-400: var(--mise-400); --color-neutral-400: var(--mise-400); --color-zinc-400: var(--mise-400); --color-gray-400: var(--mise-400); --color-slate-400: var(--mise-400);
+  --color-stone-500: var(--mise-500); --color-neutral-500: var(--mise-500); --color-zinc-500: var(--mise-500); --color-gray-500: var(--mise-500); --color-slate-500: var(--mise-500);
+  --color-stone-600: var(--mise-600); --color-neutral-600: var(--mise-600); --color-zinc-600: var(--mise-600); --color-gray-600: var(--mise-600); --color-slate-600: var(--mise-600);
+  --color-stone-700: var(--mise-700); --color-neutral-700: var(--mise-700); --color-zinc-700: var(--mise-700); --color-gray-700: var(--mise-700); --color-slate-700: var(--mise-700);
+  --color-stone-800: var(--mise-800); --color-neutral-800: var(--mise-800); --color-zinc-800: var(--mise-800); --color-gray-800: var(--mise-800); --color-slate-800: var(--mise-800);
+  --color-stone-900: var(--mise-900); --color-neutral-900: var(--mise-900); --color-zinc-900: var(--mise-900); --color-gray-900: var(--mise-900); --color-slate-900: var(--mise-900);
+  --color-stone-950: var(--mise-950); --color-neutral-950: var(--mise-950); --color-zinc-950: var(--mise-950); --color-gray-950: var(--mise-950); --color-slate-950: var(--mise-950);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html { scroll-behavior: smooth; }
@@ -304,6 +354,44 @@
   .mask-fade-b { mask-image: linear-gradient(to bottom, black 60%, transparent); }
   .mask-radial { mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%); }
 }
+
+/* Acento cítrico somente na área pública; laranja continua disponível para alertas operacionais. */
+.mise-public {
+  --color-orange-50: oklch(0.985 0.025 132);
+  --color-orange-100: oklch(0.96 0.045 132);
+  --color-orange-200: oklch(0.91 0.075 132);
+  --color-orange-300: oklch(0.86 0.11 132);
+  --color-orange-400: oklch(0.80 0.15 132);
+  --color-orange-500: oklch(0.76 0.17 132);
+  --color-orange-600: oklch(0.57 0.12 145);
+  --color-orange-700: oklch(0.45 0.09 150);
+  --color-orange-800: oklch(0.34 0.06 150);
+  --color-orange-900: oklch(0.24 0.04 150);
+  --color-orange-950: oklch(0.16 0.03 150);
+}
+
+.mise-workspace { min-width: 0; background: var(--background); color: var(--foreground); }
+.mise-workspace h1 { font-size: clamp(1.65rem, 2.25vw, 2.2rem); font-weight: 650; line-height: 1.08; letter-spacing: -0.045em; }
+.mise-workspace h2 { font-size: clamp(1.05rem, 1.45vw, 1.35rem); font-weight: 620; line-height: 1.2; letter-spacing: -0.03em; }
+.mise-workspace .bg-white { background-color: var(--card); }
+.mise-workspace .rounded-xl { border-radius: 0.9rem; }
+.mise-workspace .rounded-2xl { border-radius: 1.2rem; }
+.mise-workspace .rounded-3xl { border-radius: 1.5rem; }
+.mise-workspace input, .mise-workspace select, .mise-workspace textarea { border-radius: 0.75rem; }
+.mise-workspace input:focus-visible, .mise-workspace select:focus-visible, .mise-workspace textarea:focus-visible { box-shadow: 0 0 0 4px oklch(0.82 0.16 132 / 0.22); }
+.mise-workspace table { border-collapse: separate; border-spacing: 0; }
+.mise-workspace th { font-size: 0.65rem; font-weight: 650; letter-spacing: 0.075em; text-transform: uppercase; }
+.mise-workspace :is(button, a, input, select, textarea) { -webkit-tap-highlight-color: transparent; }
+.mise-brand-mark { position: relative; display: grid; place-items: center; overflow: hidden; border-radius: 0.85rem; background: var(--ember); color: var(--ink); box-shadow: 0 8px 22px oklch(0.14 0.025 155 / 0.15); }
+.mise-brand-mark::after { position: absolute; right: 20%; bottom: 18%; width: 0.28rem; height: 0.28rem; border-radius: 999px; background: var(--ink); content: ""; }
+.mise-auth-modal input:focus-visible, .mise-auth-modal select:focus-visible { box-shadow: 0 0 0 4px oklch(0.82 0.16 132 / 0.22); }
+.mise-access-aside { background-image: radial-gradient(ellipse at 80% 15%, oklch(0.82 0.16 132 / 0.12), transparent 35%), linear-gradient(145deg, oklch(0.19 0.04 155), oklch(0.13 0.025 155)); }
+.mise-workspace :is(button, a, select, input, textarea):focus-visible { outline: 2px solid oklch(0.72 0.15 132); outline-offset: 2px; }
+.mise-workspace :is(.border-stone-100, .border-stone-200, .border-neutral-100, .border-neutral-200) { border-color: oklch(0.90 0.018 140 / 0.9); }
+.mise-workspace .shadow-sm { box-shadow: 0 1px 2px oklch(0.16 0.035 155 / 0.04), 0 5px 18px oklch(0.16 0.035 155 / 0.035); }
+.mise-workspace .shadow-xl, .mise-workspace .shadow-2xl { --tw-shadow-color: oklch(0.14 0.025 155 / 0.12); }
+.mise-public :is(h1, h2, h3) { letter-spacing: -0.04em; }
+.mise-public section[id], .mise-public section { scroll-margin-top: 5rem; }
 
 .bg-grid-minimal {
   background-image: linear-gradient(to right, oklch(0.16 0.006 265 / 0.05) 1px, transparent 1px),
@@ -386,4 +474,3 @@
     width: 100% !important;
   }
 }
-

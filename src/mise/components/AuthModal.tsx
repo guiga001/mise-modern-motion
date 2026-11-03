@@ -7,7 +7,7 @@
  * e-mail e senha validados criptograficamente (SHA-256). Proibido login sem senha.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ChefHat,
   Lock,
@@ -62,6 +62,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [registerError, setRegisterError] = useState<string>('');
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (isOpen) setMode(initialMode);
+  }, [initialMode, isOpen]);
 
   if (!isOpen) return null;
 
@@ -147,22 +151,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/75 backdrop-blur-xs">
+    <div className="mise-auth-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/72 backdrop-blur-md">
       <div
-        className="relative w-full max-w-lg bg-white rounded-2xl shadow-2xl border border-stone-200 overflow-hidden flex flex-col max-h-[92vh]"
+        className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-stone-100">
+        <div className="flex items-center justify-between border-b border-white/10 bg-stone-950 px-7 py-6 text-white">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-stone-900 text-amber-400 flex items-center justify-center shadow-xs">
+            <div className="mise-brand-mark flex h-11 w-11 items-center justify-center">
               <ChefHat className="w-5 h-5 stroke-[2]" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-stone-900 leading-tight">
-                Mise — Gestão Alimentícia
+              <h3 className="text-lg font-semibold leading-tight text-white">
+                Mise
               </h3>
-              <p className="text-xs text-stone-500">
+              <p className="mt-1 text-xs text-white/60">
                 {mode === 'login'
                   ? 'Acesso seguro à sua empresa privada'
                   : 'Criar nova conta e empresa privada'}
@@ -171,7 +175,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition-colors cursor-pointer"
+            className="rounded-xl p-2 text-white/55 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
             title="Fechar"
           >
             <X className="w-5 h-5" />
@@ -179,7 +183,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         </div>
 
         {/* Tab Buttons (Entrar vs Cadastrar) */}
-        <div className="grid grid-cols-2 p-1.5 mx-6 mt-4 bg-stone-100 rounded-xl border border-stone-200/70 text-xs font-semibold">
+        <div className="mx-7 mt-5 grid grid-cols-2 rounded-xl border border-stone-200/80 bg-stone-100 p-1.5 text-xs font-semibold">
           <button
             type="button"
             onClick={() => {

@@ -26,7 +26,6 @@ import { SalesTab } from './components/SalesTab';
 import { FinancialTab } from './components/FinancialTab';
 import { ProductionTab } from './components/ProductionTab';
 import { SettingsTab } from './components/SettingsTab';
-import { IntegracoesTab } from './components/IntegracoesTab';
 import { IntelligenceTab } from './components/IntelligenceTab';
 
 export default function App() {
@@ -39,9 +38,16 @@ export default function App() {
     return { ...state, activeUserId: null };
   });
   const [activeTab, setActiveTab] = useState<TabKey>('dashboard');
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
+    return window.localStorage.getItem('mise-sidebar-collapsed') === 'true';
+  });
   const [isViewingLanding, setIsViewingLanding] = useState<boolean>(() => {
     return !getActiveSession();
   });
+
+  useEffect(() => {
+    window.localStorage.setItem('mise-sidebar-collapsed', String(isSidebarCollapsed));
+  }, [isSidebarCollapsed]);
 
   useEffect(() => {
     // Carregar na montagem inicial com verificação de sessão ativa
@@ -118,7 +124,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 text-stone-900 flex flex-col pb-20 md:pb-8">
+    <div className="mise-app-layout min-h-screen bg-stone-50 text-stone-900 flex flex-col pb-20 md:pb-8">
       {/* Top Header & Navigation */}
       <Navigation
         activeTab={activeTab}
@@ -127,10 +133,16 @@ export default function App() {
         onSelectStore={handleSelectStore}
         onLogout={handleLogout}
         onViewLandingPage={() => setIsViewingLanding(true)}
+        isSidebarCollapsed={isSidebarCollapsed}
+        onToggleSidebar={() => setIsSidebarCollapsed((collapsed) => !collapsed)}
       />
 
       {/* Main Tab View */}
-      <main className="flex-1">
+      <main
+        className={`mise-workspace min-w-0 flex-1 transition-[margin] duration-300 ease-in-out ${
+          isSidebarCollapsed ? 'md:ml-[72px]' : 'md:ml-60'
+        }`}
+      >
         {activeTab === 'dashboard' && (
           <DashboardTab
             database={database}
@@ -143,12 +155,6 @@ export default function App() {
             database={database}
             onUpdateDatabase={handleUpdateDatabase}
             onNavigateTab={(tab) => setActiveTab(tab as any)}
-          />
-        )}
-        {activeTab === 'integracoes' && (
-          <IntegracoesTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
           />
         )}
         {activeTab === 'recipes' && (

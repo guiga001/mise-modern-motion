@@ -9,7 +9,6 @@
 
 import React, { useState } from 'react';
 import {
-  ChefHat,
   LogIn,
   UserPlus,
   TrendingDown,
@@ -34,6 +33,8 @@ import {
 } from 'lucide-react';
 import { MiseDatabaseState } from '../lib/storage';
 import { AuthModal, AuthMode } from './AuthModal';
+import heroRestaurantCraft from '../assets/images/hero_restaurant_craft_1793400062497.jpg';
+import bentoKitchenIntelligence from '../assets/images/bento_kitchen_intelligence_1793400063016.jpg';
 
 interface LandingPageProps {
   database: MiseDatabaseState;
@@ -72,29 +73,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 font-sans selection:bg-orange-500 selection:text-white relative overflow-hidden">
+    <div className="mise-public min-h-screen bg-stone-50 text-stone-950 font-sans selection:bg-orange-500 selection:text-stone-950 relative overflow-hidden">
       {/* =========================================================================
           BACKGROUND ANIMADO ULTRALEVE (100% GPU / Zero impacto de performance)
          ========================================================================= */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true">
-        {/* Subtle geometric dot grid pattern */}
-        <div className="absolute inset-0 bg-dot-grid opacity-60" />
-
-        {/* Floating ambient glow in soft orange (Top Right) */}
-        <div
-          className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-orange-400/12 blur-[100px] animate-float-slow"
-        />
-
-        {/* Floating ambient glow in soft neutral/charcoal (Bottom Left) */}
-        <div
-          className="absolute top-[40%] -left-32 w-[520px] h-[520px] rounded-full bg-neutral-900/5 blur-[90px] animate-float-reverse"
-        />
-
-        {/* Warm center highlight on hero */}
-        <div
-          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[700px] h-[350px] rounded-full bg-orange-500/6 blur-[120px] animate-glow-pulse"
-        />
-      </div>
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[680px]"
+        aria-hidden="true"
+        style={{ background: 'radial-gradient(ellipse at 78% 8%, oklch(0.82 0.16 132 / 0.12), transparent 35%)' }}
+      />
 
       {/* Banner se já houver sessão ativa do usuário */}
       {onBackToDashboard && database.activeUserId && (
@@ -121,18 +108,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* =========================================================================
           TOP BAR CONTRACT (3 Zonas Estritas: Marca — Links — Ação Primária)
          ========================================================================= */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-neutral-200/80 transition-all">
+      <header className="sticky top-0 z-40 bg-stone-50/88 backdrop-blur-xl border-b border-stone-200/70 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-8">
-          {/* Zona 1: Marca (Elemento único, tipografia forte e acento em laranja) */}
-          <a href="#" className="flex items-center gap-2.5 shrink-0 group">
-            <div className="w-9 h-9 rounded-xl bg-neutral-950 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
-              <ChefHat className="w-5 h-5 text-orange-500 stroke-[2.2]" />
+          {/* Marca Mise: tipografia editorial e símbolo compacto de mise en place */}
+          <a href="#" className="flex items-center gap-3 shrink-0 group" aria-label="Mise, início">
+            <div className="mise-brand-mark h-10 w-10 transition-transform group-hover:-rotate-3">
+              <span className="font-display text-[25px] leading-none -mt-0.5">m</span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-xl font-black tracking-tight text-neutral-950 font-sans">
+              <span className="text-xl font-semibold tracking-tight text-stone-950 font-sans">
                 Mise
               </span>
-              <span className="w-1.5 h-1.5 rounded-full bg-orange-500 mb-1" />
+              <span className="w-1.5 h-1.5 rounded-full bg-ember mb-1" />
             </div>
           </a>
 
@@ -178,11 +165,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
       {/* =========================================================================
           HERO SECTION (Alto Impacto, Branco Minimalista, Tipografia Forte)
          ========================================================================= */}
-      <section className="relative z-10 pt-14 pb-20 md:pt-22 md:pb-28">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto">
+      <section className="relative z-10 pt-12 pb-20 md:pt-20 md:pb-24">
+        <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-[0.88fr_1.12fr] lg:gap-16 lg:px-8">
+          <div className="max-w-xl">
             {/* Kicker Tipográfico Limpo (Zero Pills) */}
-            <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-widest text-neutral-500 mb-5">
+            <div className="mb-6 flex flex-wrap items-center justify-start gap-2 text-[10px] font-semibold uppercase tracking-[0.17em] text-stone-500">
               <span className="text-orange-600">Mise Gastronomia</span>
               <span aria-hidden="true">·</span>
               <span>Engenharia de Margem</span>
@@ -191,28 +178,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Headline Monumental com Equilíbrio de Quebra */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-neutral-950 tracking-tight leading-[1.08] text-balance">
+            <h1 className="font-display text-4xl font-normal leading-[1.02] tracking-[-0.055em] text-stone-950 text-balance sm:text-5xl lg:text-[4.5rem]">
               Onde cada centavo da sua cozinha se transforma em{' '}
               <span className="relative whitespace-nowrap">
-                <span className="relative z-10 text-orange-600">lucro líquido</span>
-                <span className="absolute bottom-1 left-0 w-full h-3 bg-orange-100/80 -z-0 rounded-xs" />
+                <span className="relative z-10 text-orange-700">lucro líquido</span>
+                <span className="absolute bottom-1 left-0 h-2.5 w-full -z-0 rounded-xs bg-orange-200/70" />
               </span>
               .
             </h1>
 
             {/* Subtítulo Focado no Negócio Real */}
-            <p className="mt-6 text-base sm:text-lg text-neutral-600 leading-relaxed max-w-2xl mx-auto text-balance">
+            <p className="mt-6 max-w-xl text-base leading-relaxed text-stone-600 text-balance sm:text-lg">
               Chega de perdas invisíveis na despensa e margens comidas pelas taxas de delivery.
               A <strong>Mise</strong> decompõe o seu CMV real centavo por centavo, automatiza pedidos de compra
               sem redigitação de NF-e e previne quebras de estoque com matemática determinística.
             </p>
 
             {/* Grupo de Ação de Alto Contraste */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3.5">
+            <div className="mt-8 flex flex-col items-stretch gap-3.5 sm:flex-row sm:items-center">
               <button
                 type="button"
                 onClick={() => openAuth('register')}
-                className="w-full sm:w-auto flex items-center justify-center gap-2.5 px-7 py-3.5 rounded-xl text-sm font-bold text-white bg-neutral-950 hover:bg-neutral-900 border border-neutral-950 hover:border-orange-500 shadow-md hover:shadow-orange-500/20 transition-all cursor-pointer group"
+                className="group flex w-full items-center justify-center gap-2.5 rounded-xl border border-stone-950 bg-stone-950 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-stone-950/10 transition-all hover:border-orange-400 hover:bg-stone-900 hover:shadow-orange-500/15 sm:w-auto"
               >
                 <span>Criar Minha Empresa Grátis</span>
                 <ArrowRight className="w-4 h-4 text-orange-400 group-hover:translate-x-1 transition-transform" />
@@ -224,7 +211,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                   const calc = document.getElementById('calculadora');
                   calc?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl text-sm font-bold text-neutral-800 hover:text-neutral-950 bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 transition-all cursor-pointer"
+                className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-6 py-3.5 text-sm font-semibold text-stone-700 transition-all hover:border-stone-300 hover:bg-stone-100 sm:w-auto"
               >
                 <Calculator className="w-4 h-4 text-neutral-600" />
                 <span>Simular Retenção de Lucro</span>
@@ -232,7 +219,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
             </div>
 
             {/* Garantia de Segurança e Isolamento */}
-            <div className="mt-5 flex items-center justify-center gap-2 text-[11px] text-neutral-500">
+            <div className="mt-5 flex items-center justify-start gap-2 text-[11px] text-stone-500">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
               <span>Instalação privada por empresa · Senha única criptografada (SHA-256)</span>
             </div>
@@ -241,12 +228,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           {/* =========================================================================
               HERO VISUAL SHOWCASE (Imagem de Gastronomia de Luxo + Métricas Vivas)
              ========================================================================= */}
-          <div className="mt-14 relative max-w-5xl mx-auto">
+          <div className="relative mx-0 mt-0 w-full max-w-none">
             {/* Moldura Minimalista com Borda Fina e Sombra de Estúdio */}
-            <div className="relative rounded-2xl bg-neutral-950 p-2 sm:p-3 shadow-2xl border border-neutral-200 overflow-hidden">
+            <div className="relative overflow-hidden rounded-[1.65rem] border border-stone-200 bg-stone-950 p-2 shadow-2xl shadow-stone-950/15 sm:p-3">
               <div className="relative aspect-16/9 rounded-xl overflow-hidden bg-neutral-900">
                 <img
-                  src="/src/assets/images/hero_restaurant_craft_1793400062497.jpg"
+                  src={heroRestaurantCraft}
                   alt="Cozinha contemporânea de alta precisão operacional Mise"
                   className="w-full h-full object-cover object-center filter brightness-95 contrast-105"
                   referrerPolicy="no-referrer"
@@ -536,7 +523,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               <div className="p-4 sm:p-6 bg-neutral-100/60 border-t border-neutral-100">
                 <div className="relative aspect-16/9 rounded-xl overflow-hidden border border-neutral-200 bg-white">
                   <img
-                    src="/src/assets/images/bento_kitchen_intelligence_1793400063016.jpg"
+                    src={bentoKitchenIntelligence}
                     alt="Mise en place de precisão matemática e insumos controlados"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
