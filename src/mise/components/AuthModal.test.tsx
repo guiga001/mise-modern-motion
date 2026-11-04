@@ -28,4 +28,30 @@ describe('AuthModal', () => {
       screen.queryByRole('button', { name: 'Cadastrar Empresa e Acessar' }),
     ).not.toBeInTheDocument();
   });
+
+  it('expõe um diálogo acessível, mantém o foco dentro e fecha com Escape', () => {
+    const onClose = vi.fn();
+    render(
+      <AuthModal
+        isOpen
+        initialMode="login"
+        onClose={onClose}
+        database={{} as any}
+        onAuthSuccess={vi.fn()}
+      />,
+    );
+
+    const dialog = screen.getByRole('dialog', { name: 'Mise' });
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
+
+    const buttons = Array.from(dialog.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
+    const firstButton = buttons[0]!;
+    const lastButton = buttons[buttons.length - 1]!;
+    lastButton.focus();
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(firstButton).toHaveFocus();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });

@@ -5,9 +5,10 @@
  * Mise — Modal and Confirmation Dialog Components
  */
 
-import React, { useEffect } from 'react';
+import React, { useId, useRef } from 'react';
 import { X } from 'lucide-react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
+import { useDialogFocus } from './useDialogFocus';
 
 interface ModalProps {
   isOpen: boolean;
@@ -26,15 +27,10 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'lg',
 }) => {
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isOpen) onClose();
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const titleId = useId();
+  const descriptionId = `${titleId}-description`;
+  useDialogFocus(isOpen, dialogRef, onClose);
 
   const maxWidthClasses = {
     sm: 'max-w-sm',
@@ -46,24 +42,35 @@ export const Modal: React.FC<ModalProps> = ({
   }[maxWidth];
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-stone-950/40 backdrop-blur-md"
-      onClick={onClose}
-    >
+    <AnimatePresence initial={false}>
+      {isOpen && (
+      <motion.div
+        key="mise-modal-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.18, ease: 'easeOut' }}
+        className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-6 bg-stone-950/40 backdrop-blur-md"
+        onClick={onClose}
+      >
       <motion.div
         initial={{ opacity: 0, y: 24, scale: 0.98 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 12, scale: 0.99 }}
         transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={subtitle ? descriptionId : undefined}
+        tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
         className={`relative w-full ${maxWidthClasses} bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl ring-1 ring-stone-950/5 max-h-[90vh] flex flex-col overflow-hidden`}
       >
         <div className="flex items-start justify-between gap-4 px-6 pt-5 pb-4">
           <div>
-            <h3 className="text-[15px] font-semibold text-stone-950 tracking-tight">{title}</h3>
-            {subtitle && <p className="text-xs text-stone-500 mt-1">{subtitle}</p>}
+            <h3 id={titleId} className="text-[15px] font-semibold text-stone-950 tracking-tight">{title}</h3>
+            {subtitle && <p id={descriptionId} className="text-xs text-stone-500 mt-1">{subtitle}</p>}
           </div>
           <button
             onClick={onClose}
@@ -76,7 +83,9 @@ export const Modal: React.FC<ModalProps> = ({
         <div className="h-px bg-stone-100" />
         <div className="p-6 overflow-y-auto">{children}</div>
       </motion.div>
-    </motion.div>
+      </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

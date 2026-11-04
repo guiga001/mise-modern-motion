@@ -6,6 +6,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, MotionConfig, motion } from 'motion/react';
 import { loadDatabase, saveDatabase, appendAuditLog, MiseDatabaseState } from './lib/storage';
 import {
   getActiveSession,
@@ -105,26 +106,36 @@ export default function App() {
     isViewingLanding
   ) {
     return (
-      <LandingPage
-        database={database}
-        onLoginSuccess={(newState, activeUserId) => {
-          handleUpdateDatabase({
-            ...newState,
-            activeUserId,
-          });
-          setIsViewingLanding(false);
-        }}
-        onBackToDashboard={
-          database.activeUserId && database.users.some(u => u.id === database.activeUserId)
-            ? () => setIsViewingLanding(false)
-            : undefined
-        }
-      />
+      <MotionConfig reducedMotion="user">
+        <motion.div
+          key="mise-landing"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <LandingPage
+            database={database}
+            onLoginSuccess={(newState, activeUserId) => {
+              handleUpdateDatabase({
+                ...newState,
+                activeUserId,
+              });
+              setIsViewingLanding(false);
+            }}
+            onBackToDashboard={
+              database.activeUserId && database.users.some(u => u.id === database.activeUserId)
+                ? () => setIsViewingLanding(false)
+                : undefined
+            }
+          />
+        </motion.div>
+      </MotionConfig>
     );
   }
 
   return (
-    <div className="mise-app-layout min-h-screen bg-stone-50 text-stone-900 flex flex-col pb-20 md:pb-8">
+    <MotionConfig reducedMotion="user">
+      <div className="mise-app-layout min-h-screen bg-stone-50 text-stone-900 flex flex-col pb-20 md:pb-8">
       {/* Top Header & Navigation */}
       <Navigation
         activeTab={activeTab}
@@ -143,76 +154,88 @@ export default function App() {
           isSidebarCollapsed ? 'md:ml-[72px]' : 'md:ml-60'
         }`}
       >
-        {activeTab === 'dashboard' && (
-          <DashboardTab
-            database={database}
-            onNavigate={(tab) => setActiveTab(tab)}
-            onUpdateDatabase={handleUpdateDatabase}
-          />
-        )}
-        {activeTab === 'intelligence' && (
-          <IntelligenceTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
-            onNavigateTab={(tab) => setActiveTab(tab as any)}
-          />
-        )}
-        {activeTab === 'recipes' && (
-          <RecipesTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
-            onNavigateToIngredients={() => setActiveTab('ingredients')}
-          />
-        )}
-        {activeTab === 'ingredients' && (
-          <IngredientsTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
-          />
-        )}
-        {activeTab === 'inventory' && (
-          <InventoryTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
-            onNavigateToIngredients={() => setActiveTab('ingredients')}
-          />
-        )}
-        {activeTab === 'purchases' && (
-          <PurchasesTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
-            onNavigateToIngredients={() => setActiveTab('ingredients')}
-          />
-        )}
-        {activeTab === 'sales' && (
-          <SalesTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
-            onNavigateToRecipes={() => setActiveTab('recipes')}
-          />
-        )}
-        {activeTab === 'financial' && (
-          <FinancialTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
-          />
-        )}
-        {activeTab === 'production' && (
-          <ProductionTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
-            onNavigateToRecipes={() => setActiveTab('recipes')}
-          />
-        )}
-        {activeTab === 'settings' && (
-          <SettingsTab
-            database={database}
-            onUpdateDatabase={handleUpdateDatabase}
-            onResetToBootstrap={handleResetToBootstrap}
-            onLogout={handleLogout}
-          />
-        )}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeTab}
+            className="mise-motion-page"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {activeTab === 'dashboard' && (
+              <DashboardTab
+                database={database}
+                onNavigate={(tab) => setActiveTab(tab)}
+                onUpdateDatabase={handleUpdateDatabase}
+              />
+            )}
+            {activeTab === 'intelligence' && (
+              <IntelligenceTab
+                database={database}
+                onUpdateDatabase={handleUpdateDatabase}
+                onNavigateTab={(tab) => setActiveTab(tab as any)}
+              />
+            )}
+            {activeTab === 'recipes' && (
+              <RecipesTab
+                database={database}
+                onUpdateDatabase={handleUpdateDatabase}
+                onNavigateToIngredients={() => setActiveTab('ingredients')}
+              />
+            )}
+            {activeTab === 'ingredients' && (
+              <IngredientsTab
+                database={database}
+                onUpdateDatabase={handleUpdateDatabase}
+              />
+            )}
+            {activeTab === 'inventory' && (
+              <InventoryTab
+                database={database}
+                onUpdateDatabase={handleUpdateDatabase}
+                onNavigateToIngredients={() => setActiveTab('ingredients')}
+              />
+            )}
+            {activeTab === 'purchases' && (
+              <PurchasesTab
+                database={database}
+                onUpdateDatabase={handleUpdateDatabase}
+                onNavigateToIngredients={() => setActiveTab('ingredients')}
+              />
+            )}
+            {activeTab === 'sales' && (
+              <SalesTab
+                database={database}
+                onUpdateDatabase={handleUpdateDatabase}
+                onNavigateToRecipes={() => setActiveTab('recipes')}
+              />
+            )}
+            {activeTab === 'financial' && (
+              <FinancialTab
+                database={database}
+                onUpdateDatabase={handleUpdateDatabase}
+              />
+            )}
+            {activeTab === 'production' && (
+              <ProductionTab
+                database={database}
+                onUpdateDatabase={handleUpdateDatabase}
+                onNavigateToRecipes={() => setActiveTab('recipes')}
+              />
+            )}
+            {activeTab === 'settings' && (
+              <SettingsTab
+                database={database}
+                onUpdateDatabase={handleUpdateDatabase}
+                onResetToBootstrap={handleResetToBootstrap}
+                onLogout={handleLogout}
+              />
+            )}
+          </motion.div>
+        </AnimatePresence>
       </main>
-    </div>
+      </div>
+    </MotionConfig>
   );
 }

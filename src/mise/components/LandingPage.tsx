@@ -7,7 +7,7 @@
  * calculadora de economia em tempo real e autenticação estrita com senha única.
  */
 
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   LogIn,
   UserPlus,
@@ -72,8 +72,38 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     setAuthModalOpen(true);
   };
 
+  const motionRootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const root = motionRootRef.current;
+    if (!root) return;
+    const sections = Array.from(root.querySelectorAll<HTMLElement>('section')).slice(1);
+    if (sections.length === 0) return;
+
+    const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    sections.forEach((section, index) => {
+      section.dataset.motionReveal = '';
+      section.style.setProperty('--reveal-index', String(index % 4));
+    });
+
+    if (prefersReducedMotion || typeof IntersectionObserver === 'undefined') {
+      sections.forEach((section) => section.classList.add('is-visible'));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.12, rootMargin: '0px 0px -48px 0px' });
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="mise-public min-h-screen bg-stone-50 text-stone-950 font-sans selection:bg-orange-500 selection:text-stone-950 relative overflow-hidden">
+    <div ref={motionRootRef} className="mise-public min-h-screen bg-stone-50 text-stone-950 font-sans selection:bg-orange-500 selection:text-stone-950 relative overflow-hidden">
       {/* =========================================================================
           BACKGROUND ANIMADO ULTRALEVE (100% GPU / Zero impacto de performance)
          ========================================================================= */}
@@ -209,7 +239,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 type="button"
                 onClick={() => {
                   const calc = document.getElementById('calculadora');
-                  calc?.scrollIntoView({ behavior: 'smooth' });
+                  const prefersReducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+                  calc?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
                 }}
                 className="flex w-full items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-6 py-3.5 text-sm font-semibold text-stone-700 transition-all hover:border-stone-300 hover:bg-stone-100 sm:w-auto"
               >

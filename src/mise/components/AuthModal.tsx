@@ -7,7 +7,7 @@
  * e-mail e senha validados criptograficamente (SHA-256). Proibido login sem senha.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import {
   ChefHat,
   Lock,
@@ -24,8 +24,10 @@ import {
   ShieldCheck,
   AlertCircle,
 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
 import { MiseDatabaseState } from '../lib/storage';
 import { loginWithPassword, registerPrivateAccount } from '../lib/auth';
+import { useDialogFocus } from './useDialogFocus';
 
 export type AuthMode = 'login' | 'register';
 
@@ -62,12 +64,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [registerError, setRegisterError] = useState<string>('');
 
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  const titleId = useId();
+  const descriptionId = `${titleId}-description`;
+  useDialogFocus(isOpen, dialogRef, onClose);
 
   useEffect(() => {
     if (isOpen) setMode(initialMode);
   }, [initialMode, isOpen]);
-
-  if (!isOpen) return null;
 
   // Handle Login com Validação Estrita de Senha
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -151,8 +155,28 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   };
 
   return (
-    <div className="mise-auth-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/72 backdrop-blur-md">
-      <div
+    <AnimatePresence initial={false}>
+      {isOpen && (
+      <motion.div
+        key="mise-auth-modal-backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2, ease: 'easeOut' }}
+        className="mise-auth-modal fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-950/72 backdrop-blur-md"
+      >
+      <motion.div
+        key="mise-auth-modal-dialog"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        aria-describedby={descriptionId}
+        tabIndex={-1}
+        initial={{ opacity: 0, y: 18, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 10, scale: 0.99 }}
+        transition={{ type: 'spring', stiffness: 360, damping: 30 }}
         className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-stone-200 bg-white shadow-2xl shadow-stone-950/20"
         onClick={(e) => e.stopPropagation()}
       >
@@ -163,10 +187,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <ChefHat className="w-5 h-5 stroke-[2]" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold leading-tight text-white">
+              <h3 id={titleId} className="text-lg font-semibold leading-tight text-white">
                 Mise
               </h3>
-              <p className="mt-1 text-xs text-white/60">
+              <p id={descriptionId} className="mt-1 text-xs text-white/60">
                 {mode === 'login'
                   ? 'Acesso seguro à sua empresa privada'
                   : 'Criar nova conta e empresa privada'}
@@ -177,6 +201,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
             onClick={onClose}
             className="rounded-xl p-2 text-white/55 transition-colors hover:bg-white/10 hover:text-white cursor-pointer"
             title="Fechar"
+            aria-label="Fechar diálogo"
           >
             <X className="w-5 h-5" />
           </button>
@@ -476,7 +501,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
           </span>
           <span className="font-mono text-stone-400">Mise v1.1 Seguro</span>
         </div>
-      </div>
-    </div>
+      </motion.div>
+      </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
